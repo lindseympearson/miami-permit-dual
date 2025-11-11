@@ -29,14 +29,13 @@ export async function POST(req: Request) {
       form.getTextField("OwnerName")?.setText(data.ownerName || "");
     }
 
-    const pdfBytes = await pdfDoc.save();
-
-    return new NextResponse(pdfBytes, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Miami_Permit_${data.folio || "filled"}.pdf"`,
-      },
-    });
+   const pdfBytes = await pdfDoc.save();
+return new NextResponse(Buffer.from(pdfBytes), {
+  headers: {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `attachment; filename="Miami_Permit_${data.folio || "filled"}.pdf"`,
+  }
+});
   } catch (error) {
     return new NextResponse("Error generating PDF", { status: 500 });
   }
