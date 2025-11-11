@@ -7,9 +7,9 @@ export async function POST(req: Request) {
     ? "/city-permit-datasheet-template.pdf" 
     : "/county-building-permit-template.pdf";
 
-  // Fetch the template from the public folder
-  const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
-    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` 
+  // FIX: Use absolute URL for Vercel
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
     : "http://localhost:3000";
   const templateBytes = await fetch(`${baseUrl}${templatePath}`).then(r => r.arrayBuffer());
   
