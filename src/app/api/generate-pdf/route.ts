@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     form.getTextField("OwnerName")?.setText(data.ownerName || "");
   }
 
-  const pdfBytes = await pdfDoc.save();
+  const pdfBytes = (await pdfDoc.save()).buffer;
 
   return new NextResponse(pdfBytes, {
     headers: {
