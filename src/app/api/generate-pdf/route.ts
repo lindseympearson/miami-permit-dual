@@ -1,41 +1,61 @@
-import { NextResponse } from "next/server";
-import { PDFDocument } from "pdf-lib";
+import { NextResponse } from 'next/server';
+import { PDFDocument, rgb } from 'pdf-lib';
 
-export const dynamic = "force-dynamic";
+// Replace this with your actual form data type
+interface FormData {
+  folio?: string;
+  // Add other fields as needed
+  [key: string]: any;
+}
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const data = await req.json();
+    const data: FormData = await request.json();
 
-    const templateUrl = data.jurisdiction === "city"
-      ? "https://www.miami.gov/files/sharedassets/public/v/1/building/legacy-permitapplication-1.pdf"
-      : "https://www.miamidade.gov/permits/library/building-permit.pdf";
+    // Create a new PDF document
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([600, 800]);
+    const { width, height } = page.getSize();
 
-    const response = await fetch(templateUrl);
-    if (!response.ok) throw new Error("Failed to fetch PDF template");
+    // Add title
+    page.drawText('Miami Permit Application', {
+      x: 50,
+      y: height - 100,
+      size: 24,
+      color: rgb(0, 0.3, 0.6),
+    });
 
-    const templateBytes = await response.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(templateBytes);
-    const form = pdfDoc.getForm();
+    // Add folio number
+    page.drawText(`Folio: ${data.folio || 'N/A'}`, {
+      x: 50,
+      y: height - 150,
+      size: 16,
+      color: rgb(0, 0, 0),
+    });
 
-    // Fill fields
-    if (data.jurisdiction === "county") {
-      form.getTextField("Job Address")?.setText(data.propertyAddress || "");
-      form.getTextField("Folio")?.setText(data.folio || "");
-      form.getTextField("Owner")?.setText(data.ownerName || "");
-    } else {
-      form.getTextField("JobAddress")?.setText(data.propertyAddress || "");
-      form.getTextField("FolioNumber")?.setText(data.folio || "");
-      form.getTextField("OwnerName")?.setText(data.ownerName || "");
-    }
+    // Add placeholder content
+    page.drawText('This is a generated permit PDF.', {
+      x: 50,
+      y: height - 200,
+      size: 14,
+      color: rgb(0.2, 0.2, 0.2),
+    });
 
-  const pdfBytes = await pdfDoc.save();
-return new NextResponse(Buffer.from(pdfBytes.buffer), {
-  headers: {
-    "Content-Type": "application/pdf",
-    "Content-Disposition": `attachment; filename="Miami_Permit_${data.folio || "filled"}.pdf"`,
-  },
-});
-    return new NextResponse("Error generating PDF", { status: 500 });
+    // Finalize PDF
+    const pdfBytes = await pdfDoc.save();
+
+    // Convert to Buffer (required for NextResponse in API routes)
+    const pdfBuffer = Buffer.from(pdfBytes.buffer);
+
+    // Return PDF as download
+    return new NextResponse(pdfBuffer, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="Miami_Permit_${data.folio || 'filled'}.pdf"`,
+      },
+    });
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    return new NextResponse('Failed to generate PDF', { status: 500 });
   }
 }
